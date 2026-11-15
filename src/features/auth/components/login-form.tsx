@@ -1,16 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import type { ChangeEvent, SubmitEvent } from "react";
+import type { SubmitEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FormField } from "@/components/ui/form-field";
 
-type LoginFormValues = {
-  email: string;
-  password: string;
-};
+import { loginSchema, type LoginFormValues } from "@/lib/validation/auth";
+
+import { PasswordInput } from "./password-input";
 
 type LoginFormErrors = Partial<Record<keyof LoginFormValues, string>>;
 
@@ -19,59 +18,25 @@ const initialValues: LoginFormValues = {
   password: "",
 };
 
-function validateForm(values: LoginFormValues): LoginFormErrors {
-  const errors: LoginFormErrors = {};
-
-  const email = values.email.trim();
-
-  if (!email) {
-    errors.email = "Please enter your email address.";
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    errors.email = "Please enter a valid email address.";
-  }
-
-  if (!values.password) {
-    errors.password = "Please enter your password.";
-  }
-
-  return errors;
-}
-
 export function LoginForm() {
   const [values, setValues] = useState<LoginFormValues>(initialValues);
 
   const [errors, setErrors] = useState<LoginFormErrors>({});
 
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-
   const [statusMessage, setStatusMessage] = useState("");
 
-  function handleEmailChange(event: ChangeEvent<HTMLInputElement>) {
-    const email = event.currentTarget.value;
+  function updateField<K extends keyof LoginFormValues>(
+    field: K,
+    value: LoginFormValues[K],
+  ) {
     setValues((previousValues) => ({
       ...previousValues,
-      email,
+      [field]: value,
     }));
 
     setErrors((previousErrors) => ({
       ...previousErrors,
-      email: undefined,
-    }));
-
-    setStatusMessage("");
-  }
-
-  function handlePasswordChange(event: ChangeEvent<HTMLInputElement>) {
-    const password = event.currentTarget.value;
-
-    setValues((previousValues) => ({
-      ...previousValues,
-      password,
-    }));
-
-    setErrors((previousErrors) => ({
-      ...previousErrors,
-      password: undefined,
+      [field]: undefined,
     }));
 
     setStatusMessage("");
@@ -80,20 +45,32 @@ export function LoginForm() {
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const validationErrors = validateForm(values);
-    const validationErrors2 = validateForm(values);
-    setErrors(validationErrors2);
+    const result = loginSchema.safeParse(values);
 
-    setErrors(validationErrors);
+    if (!result.success) {
+      const nextErrors: LoginFormErrors = {};
 
-    if (Object.keys(validationErrors).length > 0) {
+      for (const issue of result.error.issues) {
+        const field = issue.path[0];
+
+        if (field === "email" || field === "password") {
+          nextErrors[field] ??= issue.message;
+        }
+      }
+
+      setErrors(nextErrors);
       setStatusMessage("");
       return;
     }
 
+    setErrors({});
+
     setStatusMessage(
       "Your input is valid. Authentication is not connected yet.",
     );
+
+    // result.data contains validated and normalized values.
+    // We will send it to the server when authentication is implemented.
   }
 
   return (
@@ -114,7 +91,9 @@ export function LoginForm() {
             type="email"
             autoComplete="email"
             value={values.email}
-            onChange={handleEmailChange}
+            onChange={(event) =>
+              updateField("email", event.currentTarget.value)
+            }
             aria-invalid={Boolean(errors.email)}
             aria-describedby={errors.email ? "email-error" : undefined}
             className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
@@ -123,29 +102,18 @@ export function LoginForm() {
         </FormField>
 
         <FormField id="password" label="Password" error={errors.password}>
-          <div className="relative">
-            <input
-              id="password"
-              name="password"
-              type={isPasswordVisible ? "text" : "password"}
-              autoComplete="current-password"
-              value={values.password}
-              onChange={handlePasswordChange}
-              aria-invalid={Boolean(errors.password)}
-              aria-describedby={errors.password ? "password-error" : undefined}
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 pr-20 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-              placeholder="Enter your password"
-            />
-
-            <button
-              type="button"
-              onClick={() => setIsPasswordVisible((previous) => !previous)}
-              className="absolute inset-y-0 right-3 text-xs font-medium text-slate-400 transition hover:text-white"
-              aria-label={isPasswordVisible ? "Hide password" : "Show password"}
-            >
-              {isPasswordVisible ? "Hide" : "Show"}
-            </button>
-          </div>
+          <PasswordInput
+            id="password"
+            name="password"
+            value={values.password}
+            onChange={(event) =>
+              updateField("password", event.currentTarget.value)
+            }
+            autoComplete="current-password"
+            placeholder="Enter your password"
+            invalid={Boolean(errors.password)}
+            describedBy={errors.password ? "password-error" : undefined}
+          />
         </FormField>
 
         {statusMessage && (
