@@ -1,17 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import type { SubmitEvent } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FormField } from "@/components/ui/form-field";
 
-import { loginSchema, type LoginFormValues } from "@/lib/validation/auth";
+import { loginSchema, type LoginFormValues } from "@/lib/validations/auth";
 
 import { PasswordInput } from "./password-input";
-
-type LoginFormErrors = Partial<Record<keyof LoginFormValues, string>>;
 
 const initialValues: LoginFormValues = {
   email: "",
@@ -19,58 +18,33 @@ const initialValues: LoginFormValues = {
 };
 
 export function LoginForm() {
-  const [values, setValues] = useState<LoginFormValues>(initialValues);
-
-  const [errors, setErrors] = useState<LoginFormErrors>({});
-
   const [statusMessage, setStatusMessage] = useState("");
+  /**
+ *register: connects native fields.
+  control: provides the control object required by Controller.
+  handleSubmit: coordinates validation and submission.
+  errors: contains validation errors.
+  isSubmitting: indicates whether an asynchronous submission is in progress.
+ */
+  const {
+    register,
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: initialValues,
+    mode: "onTouched",
+  });
 
-  function updateField<K extends keyof LoginFormValues>(
-    field: K,
-    value: LoginFormValues[K],
-  ) {
-    setValues((previousValues) => ({
-      ...previousValues,
-      [field]: value,
-    }));
-
-    setErrors((previousErrors) => ({
-      ...previousErrors,
-      [field]: undefined,
-    }));
-
-    setStatusMessage("");
-  }
-
-  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const result = loginSchema.safeParse(values);
-
-    if (!result.success) {
-      const nextErrors: LoginFormErrors = {};
-
-      for (const issue of result.error.issues) {
-        const field = issue.path[0];
-
-        if (field === "email" || field === "password") {
-          nextErrors[field] ??= issue.message;
-        }
-      }
-
-      setErrors(nextErrors);
-      setStatusMessage("");
-      return;
-    }
-
-    setErrors({});
-
+  function onSubmit(data: LoginFormValues) {
     setStatusMessage(
       "Your input is valid. Authentication is not connected yet.",
     );
 
-    // result.data contains validated and normalized values.
-    // We will send it to the server when authentication is implemented.
+    // Validated data will be sent to the server
+    // when we implement authentication.
+    console.log(data);
   }
 
   return (
@@ -83,36 +57,47 @@ export function LoginForm() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} noValidate className="space-y-5">
-        <FormField id="email" label="Email address" error={errors.email}>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
+        <FormField
+          id="email"
+          label="Email address"
+          error={errors.email?.message}
+        >
           <input
             id="email"
-            name="email"
             type="email"
             autoComplete="email"
-            value={values.email}
-            onChange={(event) =>
-              updateField("email", event.currentTarget.value)
-            }
+            placeholder="you@example.com"
             aria-invalid={Boolean(errors.email)}
             aria-describedby={errors.email ? "email-error" : undefined}
             className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-            placeholder="you@example.com"
+            {...register("email")}
           />
         </FormField>
 
-        <FormField id="password" label="Password" error={errors.password}>
-          <PasswordInput
-            id="password"
+        <FormField
+          id="password"
+          label="Password"
+          error={errors.password?.message}
+        >
+          {/* Controller connects a custom controlled component to RHF. because PasswordInput is a custom component. */}
+          <Controller
             name="password"
-            value={values.password}
-            onChange={(event) =>
-              updateField("password", event.currentTarget.value)
-            }
-            autoComplete="current-password"
-            placeholder="Enter your password"
-            invalid={Boolean(errors.password)}
-            describedBy={errors.password ? "password-error" : undefined}
+            control={control}
+            render={({ field }) => (
+              <PasswordInput
+                id="password"
+                name={field.name}
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                inputRef={field.ref}
+                autoComplete="current-password"
+                placeholder="Enter your password"
+                invalid={Boolean(errors.password)}
+                describedBy={errors.password ? "password-error" : undefined}
+              />
+            )}
           />
         </FormField>
 
@@ -125,7 +110,7 @@ export function LoginForm() {
           </p>
         )}
 
-        <Button type="submit" className="w-full">
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
           Sign in
         </Button>
       </form>

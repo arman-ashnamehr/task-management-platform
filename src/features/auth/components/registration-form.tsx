@@ -1,16 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FormField } from "@/components/ui/form-field";
 
-import { registerSchema, type RegisterFormValues } from "@/lib/validation/auth";
+import {
+  registerSchema,
+  type RegisterFormValues,
+} from "@/lib/validations/auth";
 
 import { PasswordInput } from "./password-input";
-
-type RegisterFormErrors = Partial<Record<keyof RegisterFormValues, string>>;
 
 const initialValues: RegisterFormValues = {
   name: "",
@@ -20,72 +23,30 @@ const initialValues: RegisterFormValues = {
 };
 
 export function RegisterForm() {
-  const [values, setValues] = useState<RegisterFormValues>(initialValues);
-
-  const [errors, setErrors] = useState<RegisterFormErrors>({});
-
   const [statusMessage, setStatusMessage] = useState("");
 
-  function updateField<K extends keyof RegisterFormValues>(
-    field: K,
-    value: RegisterFormValues[K],
-  ) {
-    setValues((previousValues) => ({
-      ...previousValues,
-      [field]: value,
-    }));
-    setErrors((previousErrors) => {
-      const nextErrors = {
-        ...previousErrors,
-        [field]: undefined,
-      };
+  const {
+    register,
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: initialValues,
+    mode: "onTouched",
+  });
 
-      if (field === "password") {
-        nextErrors.confirmPassword = undefined;
-      }
-
-      return nextErrors;
-    });
-
-    setStatusMessage("");
-  }
-
-  function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const result = registerSchema.safeParse(values);
-
-    if (!result.success) {
-      const nextErrors: RegisterFormErrors = {};
-
-      for (const issue of result.error.issues) {
-        const field = issue.path[0];
-
-        if (
-          field === "name" ||
-          field === "email" ||
-          field === "password" ||
-          field === "confirmPassword"
-        ) {
-          nextErrors[field] ??= issue.message;
-        }
-      }
-
-      setErrors(nextErrors);
-      setStatusMessage("");
-      return;
-    }
-
-    setErrors({});
-
+  function onSubmit(data: RegisterFormValues) {
     setStatusMessage(
       "Your information is valid. Account creation is not connected yet.",
     );
 
-    // result.data contains validated and normalized values.
-    // We will send it to the server when authentication is implemented.
+    // Validated data will be sent to the server
+    // when we implement authentication.
+    console.log(data);
   }
-
+  /**Controller is intended for components that need an explicit controlled interface,
+   * such as our custom PasswordInput, date pickers, and many third-party UI library components. */
   return (
     <Card>
       <div className="mb-8">
@@ -96,77 +57,89 @@ export function RegisterForm() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} noValidate className="space-y-5">
-        <FormField id="name" label="Full name" error={errors.name}>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
+        <FormField id="name" label="Full name" error={errors.name?.message}>
           <input
             id="name"
-            name="name"
             type="text"
             autoComplete="name"
-            value={values.name}
-            onChange={(event) => updateField("name", event.currentTarget.value)}
+            placeholder="Your full name"
             aria-invalid={Boolean(errors.name)}
             aria-describedby={errors.name ? "name-error" : undefined}
             className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-            placeholder="Your full name"
+            {...register("name")}
           />
         </FormField>
 
-        <FormField id="email" label="Email address" error={errors.email}>
+        <FormField
+          id="email"
+          label="Email address"
+          error={errors.email?.message}
+        >
           <input
             id="email"
-            name="email"
             type="email"
             autoComplete="email"
-            value={values.email}
-            onChange={(event) =>
-              updateField("email", event.currentTarget.value)
-            }
+            placeholder="you@example.com"
             aria-invalid={Boolean(errors.email)}
             aria-describedby={errors.email ? "email-error" : undefined}
             className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-            placeholder="you@example.com"
+            {...register("email")}
           />
         </FormField>
 
         <FormField
           id="password"
           label="Password"
-          error={errors.password}
+          error={errors.password?.message}
           hint="Use at least 8 characters."
         >
-          <PasswordInput
-            id="password"
+          <Controller
             name="password"
-            value={values.password}
-            onChange={(event) =>
-              updateField("password", event.currentTarget.value)
-            }
-            autoComplete="new-password"
-            placeholder="Create a password"
-            invalid={Boolean(errors.password)}
-            describedBy={errors.password ? "password-error" : "password-hint"}
+            control={control}
+            render={({ field }) => (
+              <PasswordInput
+                id="password"
+                name={field.name}
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                inputRef={field.ref}
+                autoComplete="new-password"
+                placeholder="Create a password"
+                invalid={Boolean(errors.password)}
+                describedBy={
+                  errors.password ? "password-error" : "password-hint"
+                }
+              />
+            )}
           />
         </FormField>
 
         <FormField
           id="confirmPassword"
           label="Confirm password"
-          error={errors.confirmPassword}
+          error={errors.confirmPassword?.message}
         >
-          <PasswordInput
-            id="confirmPassword"
+          <Controller
             name="confirmPassword"
-            value={values.confirmPassword}
-            onChange={(event) =>
-              updateField("confirmPassword", event.currentTarget.value)
-            }
-            autoComplete="new-password"
-            placeholder="Enter your password again"
-            invalid={Boolean(errors.confirmPassword)}
-            describedBy={
-              errors.confirmPassword ? "confirmPassword-error" : undefined
-            }
+            control={control}
+            render={({ field }) => (
+              <PasswordInput
+                id="confirmPassword"
+                name={field.name}
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                inputRef={field.ref}
+                autoComplete="new-password"
+                placeholder="Enter your password again"
+                invalid={Boolean(errors.confirmPassword)}
+                describedBy={
+                  errors.confirmPassword ? "confirmPassword-error" : undefined
+                }
+              />
+            )}
           />
         </FormField>
 
@@ -179,7 +152,7 @@ export function RegisterForm() {
           </p>
         )}
 
-        <Button type="submit" className="w-full">
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
           Create account
         </Button>
       </form>
