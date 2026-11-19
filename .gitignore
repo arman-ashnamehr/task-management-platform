@@ -17,6 +17,14 @@
 /.next/
 /out/
 
+# Playwright generated artifacts
+/playwright-report/
+/test-results/
+/playwright/.cache/
+
+# Vitest generated artifacts
+coverage/
+
 # production
 /build
 
