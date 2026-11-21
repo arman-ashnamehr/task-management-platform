@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FormField } from "@/components/ui/form-field";
 
+import { signIn } from "@/lib/auth/auth-client";
 import { loginSchema, type LoginFormValues } from "@/lib/validations/auth";
 
 import { PasswordInput } from "./password-input";
@@ -18,7 +19,7 @@ const initialValues: LoginFormValues = {
 };
 
 export function LoginForm() {
-  const [statusMessage, setStatusMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   /**
  *register: connects native fields.
   control: provides the control object required by Controller.
@@ -37,14 +38,23 @@ export function LoginForm() {
     mode: "onTouched",
   });
 
-  function onSubmit(data: LoginFormValues) {
-    setStatusMessage(
-      "Your input is valid. Authentication is not connected yet.",
-    );
+  async function onSubmit(data: LoginFormValues) {
+    setErrorMessage("");
 
-    // Validated data will be sent to the server
-    // when we implement authentication.
-    console.log(data);
+    try {
+      const result = await signIn.email({
+        email: data.email,
+        password: data.password,
+        callbackURL: "/dashboard",
+      });
+
+      if (result.error) {
+        setErrorMessage("Invalid email or password. Please try again.");
+        return;
+      }
+    } catch {
+      setErrorMessage("Something went wrong. Please try again later.");
+    }
   }
 
   return (
@@ -80,7 +90,6 @@ export function LoginForm() {
           label="Password"
           error={errors.password?.message}
         >
-          {/* Controller connects a custom controlled component to RHF. because PasswordInput is a custom component. */}
           <Controller
             name="password"
             control={control}
@@ -101,17 +110,18 @@ export function LoginForm() {
           />
         </FormField>
 
-        {statusMessage && (
+        {errorMessage && (
           <p
-            role="status"
-            className="rounded-lg border border-emerald-800 bg-emerald-950/40 p-3 text-sm text-emerald-300"
+            role="alert"
+            className="rounded-lg border border-red-800 bg-red-950/40 p-3 text-sm text-red-300"
           >
-            {statusMessage}
+            {errorMessage}
           </p>
         )}
 
         <Button type="submit" className="w-full" disabled={isSubmitting}>
-          Sign in
+          {/* We don't need another useState for loading. RHF already provides isSubmitting, which is exactly what we need. */}
+          {isSubmitting ? "Signing in..." : "Sign in"}
         </Button>
       </form>
     </Card>

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FormField } from "@/components/ui/form-field";
 
+import { signUp } from "@/lib/auth/auth-client";
 import {
   registerSchema,
   type RegisterFormValues,
@@ -23,7 +24,7 @@ const initialValues: RegisterFormValues = {
 };
 
 export function RegisterForm() {
-  const [statusMessage, setStatusMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const {
     register,
@@ -36,17 +37,28 @@ export function RegisterForm() {
     mode: "onTouched",
   });
 
-  function onSubmit(data: RegisterFormValues) {
-    setStatusMessage(
-      "Your information is valid. Account creation is not connected yet.",
-    );
+  async function onSubmit(data: RegisterFormValues) {
+    setErrorMessage("");
 
-    // Validated data will be sent to the server
-    // when we implement authentication.
-    console.log(data);
+    try {
+      const result = await signUp.email({
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        callbackURL: "/dashboard",
+      });
+
+      if (result.error) {
+        setErrorMessage(
+          "We couldn't create your account. Please check your details or try another email address.",
+        );
+        return;
+      }
+    } catch {
+      setErrorMessage("Something went wrong. Please try again later.");
+    }
   }
-  /**Controller is intended for components that need an explicit controlled interface,
-   * such as our custom PasswordInput, date pickers, and many third-party UI library components. */
+
   return (
     <Card>
       <div className="mb-8">
@@ -143,17 +155,17 @@ export function RegisterForm() {
           />
         </FormField>
 
-        {statusMessage && (
+        {errorMessage && (
           <p
-            role="status"
-            className="rounded-lg border border-emerald-800 bg-emerald-950/40 p-3 text-sm text-emerald-300"
+            role="alert"
+            className="rounded-lg border border-red-800 bg-red-950/40 p-3 text-sm text-red-300"
           >
-            {statusMessage}
+            {errorMessage}
           </p>
         )}
 
         <Button type="submit" className="w-full" disabled={isSubmitting}>
-          Create account
+          {isSubmitting ? "Creating account..." : "Create account"}
         </Button>
       </form>
     </Card>

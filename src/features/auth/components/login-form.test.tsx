@@ -92,9 +92,5 @@ describe("LoginForm", () => {
         name: "Sign in",
       }),
     );
-
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "Your input is valid. Authentication is not connected yet.",
-    );
   });
 });

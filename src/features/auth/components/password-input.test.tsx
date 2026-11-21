@@ -20,7 +20,7 @@ describe("PasswordInput", () => {
       />,
     );
 
-    expect(screen.getByLabelText("Enter your password")).toHaveAttribute(
+    expect(screen.getByPlaceholderText("Enter your password")).toHaveAttribute(
       "type",
       "password",
     );
