@@ -1,42 +1,30 @@
-import type { Metadata } from "next";
-import { Card } from "@/components/ui/card";
-import { PageHeading } from "@/components/ui/page-heading";
+import type { ReactNode } from "react";
 
-export const metadata: Metadata = {
-  title: "Dashboard",
+import { redirect } from "next/navigation";
+
+import { AppHeader } from "@/components/layouts/app-header";
+import { AppSidebar } from "@/components/layouts/app-sidebar";
+import { getSession } from "@/lib/auth/session";
+
+type AppLayoutProps = {
+  children: ReactNode;
 };
 
-export default function DashboardPage() {
+export default async function AppLayout({ children }: AppLayoutProps) {
+  const session = await getSession();
+
+  if (!session) {
+    redirect("/login");
+  }
+
   return (
-    <section>
-      <PageHeading
-        title="Dashboard"
-        description="Get an overview of your work and recent activity."
-      />
+    <div className="flex flex-1 flex-col bg-slate-950 text-white">
+      <AppHeader user={session.user} />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <Card>
-          <p className="text-sm text-slate-400">Workspaces</p>
-          <p className="mt-3 text-3xl font-bold">0</p>
-          <p className="mt-2 text-sm text-slate-500">
-            Workspaces you belong to
-          </p>
-        </Card>
-
-        <Card>
-          <p className="text-sm text-slate-400">Projects</p>
-          <p className="mt-3 text-3xl font-bold">0</p>
-          <p className="mt-2 text-sm text-slate-500">
-            Projects across your workspaces
-          </p>
-        </Card>
-
-        <Card>
-          <p className="text-sm text-slate-400">Assigned tasks</p>
-          <p className="mt-3 text-3xl font-bold">0</p>
-          <p className="mt-2 text-sm text-slate-500">Tasks assigned to you</p>
-        </Card>
+      <div className="flex flex-1">
+        <AppSidebar />
+        <main className="min-w-0 flex-1 p-8">{children}</main>
       </div>
-    </section>
+    </div>
   );
 }
