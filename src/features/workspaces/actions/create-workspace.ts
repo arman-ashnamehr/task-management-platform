@@ -8,7 +8,7 @@ import { slugify } from "@/lib/utils/slug";
 
 const MAX_SLUG_ATTEMPTS = 100;
 
-type CreateWorkspaceResult =
+export type CreateWorkspaceResult =
   //The leading | just makes multiline unions visually aligned and easy to scan when adding or removing branches.
   | {
       success: true;
