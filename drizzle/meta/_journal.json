@@ -15,6 +15,13 @@
       "when": 1795342114632,
       "tag": "0001_silly_wolverine",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795616253700,
+      "tag": "0002_cynical_secret_warriors",
+      "breakpoints": true
     }
   ]
 }
