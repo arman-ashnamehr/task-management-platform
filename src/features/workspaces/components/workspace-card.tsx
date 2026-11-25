@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import type { getUserWorkspaces } from "@/features/workspaces/queries/get-user-workspaces";
 
 type WorkspaceCardProps = {
@@ -6,7 +8,10 @@ type WorkspaceCardProps = {
 
 export function WorkspaceCard({ workspace }: WorkspaceCardProps) {
   return (
-    <article className="rounded-xl border border-slate-800 bg-slate-900/50 p-6 transition hover:border-slate-700">
+    <Link
+      href={`/workspace/${workspace.id}`}
+      className="block rounded-xl border border-slate-800 bg-slate-900/50 p-6 transition hover:border-indigo-500/50 hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+    >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <h2 className="truncate text-lg font-semibold text-white">
@@ -33,6 +38,6 @@ export function WorkspaceCard({ workspace }: WorkspaceCardProps) {
           })}
         </p>
       </div>
-    </article>
+    </Link>
   );
 }
