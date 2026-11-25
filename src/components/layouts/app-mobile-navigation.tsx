@@ -58,7 +58,7 @@ export function AppMobileNavigation() {
                 Dashboard
               </AppNavLink>
 
-              <AppNavLink href="/workspaces" onNavigate={closeMenu}>
+              <AppNavLink href="/workspace" onNavigate={closeMenu}>
                 Workspaces
               </AppNavLink>
             </nav>

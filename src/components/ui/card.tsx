@@ -6,7 +6,7 @@ export function Card({ className = "", ...props }: CardProps) {
   return (
     <div
       className={[
-        "rounded-xl boarder boarder-slate bg-slate-900",
+        "rounded-xl boarder boarder-slate-800 bg-slate-900",
         className,
       ].join(" ")}
       {...props}

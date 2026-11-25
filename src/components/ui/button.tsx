@@ -28,29 +28,6 @@ const sizeStyles: Record<ButtonSize, string> = {
   lg: "px-6 py-3 text-base",
 };
 
-export function Mybutton({
-  variant = "primary",
-  size = "md",
-  className = "",
-  type = "button",
-  ...props
-}: ButtonProps) {
-  return (
-    <button
-      type={type}
-      className={[
-        "inline-flex items-center justify-center rounded-lg font-medium",
-        "transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
-        "disabled:pointer-events-none disabled:opacity-50",
-        variantStyles[variant],
-        sizeStyles[size],
-        className,
-      ].join(" ")}
-      {...props}
-    ></button>
-  );
-}
-
 export function Button({
   variant = "primary",
   size = "md",
