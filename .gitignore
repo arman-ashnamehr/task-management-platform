@@ -41,7 +41,7 @@ yarn-error.log*
 !.env.example
 # env files (can opt-in for committing if needed)
 .env.*
-
+.env.test.local
 # vercel
 .vercel
 
