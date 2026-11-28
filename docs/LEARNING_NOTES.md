@@ -2259,3 +2259,75 @@ Every important implementation decision should answer three questions:
 3. **What should I remember and apply in future projects?**
 
 This document should grow alongside the application and become a reusable technical reference for future projects.
+
+## Milestone 23.14.5 — Remove Project Member
+
+### Purpose
+
+Implemented a Server Action that allows authorized users to remove an explicit project membership without deleting the user's account or workspace membership.
+
+### Server Action
+
+File: `src/features/projects/actions/remove-project-member.ts`
+
+The action performs these steps:
+
+1. Authenticates the actor using the server-side session.
+2. Validates the project UUID and target user ID.
+3. Retrieves the project together with the actor's workspace and project roles.
+4. Checks whether the actor has permission to remove project members.
+5. Retrieves the target user's project membership.
+6. Prevents Project Managers from removing other Project Managers.
+7. Deletes the membership and returns the deleted record.
+
+### Authorization Rules
+
+- Workspace OWNER and ADMIN can remove either MANAGER or MEMBER.
+- Project MANAGER can remove MEMBER only.
+- Project MEMBER cannot remove anyone.
+
+### Important Implementation Concepts
+
+**Conditional DELETE**
+
+For Project Managers, the DELETE query includes a role condition:
+
+`role = MEMBER`
+
+This is important because authorization decisions should not rely exclusively on an earlier database read. The target's role could change between the SELECT and DELETE operations.
+
+Including the role condition in the DELETE statement provides an additional database-level safeguard.
+
+**RETURNING**
+
+The action uses Drizzle's `.returning()` to retrieve the deleted membership. If no row is returned, the action reports that the membership could not be removed.
+
+**Project membership versus workspace membership**
+
+Removing a project membership does not delete the user's account or workspace membership. The user may still belong to the workspace and access other projects.
+
+### Unit Tests
+
+Tests cover:
+
+- Unauthenticated requests.
+- Invalid project IDs and target user IDs.
+- Actors without project access.
+- Insufficient permissions.
+- Attempts by Project Managers to remove other Managers.
+- Successful removal by Project Managers and Workspace Owners.
+- Missing target memberships.
+- Deletion failures and generic error responses.
+
+### Important Future Consideration
+
+When the Task model is implemented, removing a project member may also require unassigning that user's tasks and recording an activity log. Those operations should be handled together in a database transaction.
+
+### Milestone Status
+
+- [x] Remove Project Member Server Action
+- [x] Role-based authorization
+- [x] Conditional deletion
+- [x] Unit tests
+- [x] Verification
+- [x] Commit and push
